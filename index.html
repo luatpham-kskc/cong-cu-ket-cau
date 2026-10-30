@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tra thép</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #1d232b;
+    --muted: #5f6b7a;
+    --line: #dde1e6;
+    --accent: #1f5fa8;
+    --accent-soft: #e8f0fa;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171b;
+      --card: #1d2228;
+      --text: #e6e9ed;
+      --muted: #9aa5b1;
+      --line: #2f363e;
+      --accent: #6aa6ea;
+      --accent-soft: #1f2d3d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 640px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.4rem; margin: 8px 0 16px; }
+  h2 { font-size: 1.1rem; margin: 0 0 12px; }
+  section {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .row { display: flex; gap: 12px; }
+  .row > label { flex: 1; min-width: 0; }
+  label { display: block; font-size: .9rem; color: var(--muted); }
+  select, input {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    padding: 10px 12px;
+    font-size: 1.05rem;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  select:focus, input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+  .result {
+    margin-top: 14px;
+    padding: 12px;
+    background: var(--accent-soft);
+    border-radius: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .result div { min-width: 0; }
+  .result span { display: block; font-size: .85rem; color: var(--muted); }
+  .result b { font-size: 1.3rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { padding: 8px 6px; text-align: right; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-size: .85rem; color: var(--muted); font-weight: 600; }
+  tbody tr.on { background: var(--accent-soft); }
+  .note { font-size: .85rem; color: var(--muted); margin: 10px 0 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Tra thép</h1>
+
+  <section>
+    <h2>1. Tra theo số cây</h2>
+    <div class="row">
+      <label>Đường kính (mm)
+        <select id="d1"></select>
+      </label>
+      <label>Số cây
+        <input id="n1" type="number" inputmode="numeric" min="1" step="1" value="1">
+      </label>
+    </div>
+    <div class="result">
+      <div><span>Diện tích As</span><b id="as1">–</b> cm²</div>
+      <div><span>Trọng lượng</span><b id="w1">–</b> kg/m</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2. Thép sàn theo khoảng cách</h2>
+    <div class="row">
+      <label>Đường kính (mm)
+        <select id="d2"></select>
+      </label>
+      <label>Khoảng cách a (mm)
+        <input id="a2" type="number" inputmode="decimal" min="1" step="any" value="200">
+      </label>
+    </div>
+    <div class="result">
+      <div><span>As trên 1 m bề rộng</span><b id="as2">–</b> cm²/m</div>
+      <div><span>Số cây trên 1 m</span><b id="n2">–</b> cây</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. Bảng tra nhanh</h2>
+    <table>
+      <thead><tr><th>Ø (mm)</th><th>As 1 cây (cm²)</th><th>kg/m</th></tr></thead>
+      <tbody id="tbl"></tbody>
+    </table>
+    <p class="note">As = π·d²/4. Trọng lượng = 0,00617 × d² (kg/m), d tính bằng mm.</p>
+  </section>
+</main>
+
+<script>
+  const DIAMETERS = [6, 8, 10, 12, 14, 16, 18, 20, 22, 25, 28, 32];
+
+  // Diện tích 1 cây, cm²
+  const area = d => Math.PI * d * d / 4 / 100;
+  // Trọng lượng 1 cây, kg/m
+  const weight = d => 0.00617 * d * d;
+
+  const fmt = (x, digits) =>
+    x.toLocaleString('vi-VN', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+
+  const $ = id => document.getElementById(id);
+
+  for (const id of ['d1', 'd2']) {
+    $(id).innerHTML = DIAMETERS.map(d => `<option value="${d}">Ø${d}</option>`).join('');
+  }
+  $('d1').value = 16;
+  $('d2').value = 10;
+
+  $('tbl').innerHTML = DIAMETERS.map(d =>
+    `<tr data-d="${d}"><td>Ø${d}</td><td>${fmt(area(d), 3)}</td><td>${fmt(weight(d), 3)}</td></tr>`
+  ).join('');
+
+  function calcBars() {
+    const d = +$('d1').value;
+    const n = parseFloat($('n1').value);
+    const ok = n > 0;
+    $('as1').textContent = ok ? fmt(area(d) * n, 2) : '–';
+    $('w1').textContent = ok ? fmt(weight(d) * n, 2) : '–';
+    for (const tr of $('tbl').rows) tr.classList.toggle('on', +tr.dataset.d === d);
+  }
+
+  function calcSlab() {
+    const d = +$('d2').value;
+    const a = parseFloat($('a2').value);
+    const ok = a > 0;
+    $('as2').textContent = ok ? fmt(area(d) * 1000 / a, 2) : '–';
+    $('n2').textContent = ok ? fmt(1000 / a, 2) : '–';
+  }
+
+  $('d1').addEventListener('change', calcBars);
+  $('n1').addEventListener('input', calcBars);
+  $('d2').addEventListener('change', calcSlab);
+  $('a2').addEventListener('input', calcSlab);
+  calcBars();
+  calcSlab();
+</script>
+</body>
+</html>
